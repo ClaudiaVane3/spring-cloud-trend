@@ -6,6 +6,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.context.annotation.Bean;
@@ -14,13 +15,21 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 @EnableEurekaClient
 @EnableHystrix
+@EnableCaching
 public class DataHandlerApplication {
   public static void main(String[] args) {
 
     int port = 8001;
     int eurekaServerPort = 8761;
+    int redisPort = 6379;
+
     if (NetUtil.isUsableLocalPort(eurekaServerPort)) {
-      System.err.println(eurekaServerPort + " is not on service");
+      System.err.println(eurekaServerPort + " is not available");
+      System.exit(1);
+    }
+
+    if (NetUtil.isUsableLocalPort(redisPort)) {
+      System.err.println(redisPort + " is not available");
       System.exit(1);
     }
 

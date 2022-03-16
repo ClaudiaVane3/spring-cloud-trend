@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import vane.data.handler.pojo.Index;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// 保存到 redis 的缓存名称是 indexes
+@CacheConfig(cacheNames = "indexes")
 public class IndexService {
 
   @Value("${raw.data.url}")
@@ -23,6 +27,8 @@ public class IndexService {
   public IndexService() {}
 
   @HystrixCommand(fallbackMethod = "fetchIndexFailed")
+  // 保存到 redis 的 key 是 all_codes.
+  @Cacheable(key = "'all_codes'")
   public List<Index> fetchIndex() {
     List<Map> rawData = restTemplate.getForObject(rawDataUrl, List.class);
     return map2Index(rawData);
