@@ -32,6 +32,7 @@ public class RedisCacheConfig {
   public CacheManager cacheManager(RedisConnectionFactory connFactory) {
     RedisSerializer<String> redisSerializer = new StringRedisSerializer();
     Jackson2JsonRedisSerializer jsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+
     // 解决查询缓存转化异常的问题
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.PUBLIC_ONLY);
@@ -40,6 +41,7 @@ public class RedisCacheConfig {
         ObjectMapper.DefaultTyping.NON_FINAL,
         JsonTypeInfo.As.PROPERTY);
     jsonRedisSerializer.setObjectMapper(objectMapper);
+
     // 配置序列化（解决乱码问题）
     RedisCacheConfiguration config =
         RedisCacheConfiguration.defaultCacheConfig()

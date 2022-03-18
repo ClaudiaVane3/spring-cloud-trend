@@ -1,36 +1,62 @@
 package vane.data.handler.service;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import vane.data.handler.pojo.Index;
+import vane.data.handler.util.SpringContextUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Data
 @Service
 // 保存到 redis 的缓存名称是 indexes
 @CacheConfig(cacheNames = "indexes")
 public class IndexService {
 
-  @Value("${raw.data.url}")
-  private String rawDataUrl;
+  private List<Index> indexList;
 
   @Autowired RestTemplate restTemplate;
 
-  public IndexService() {}
+  @Value("${raw.data.url}")
+  private String rawDataUrl;
 
   @HystrixCommand(fallbackMethod = "fetchIndexFailed")
-  // 保存到 redis 的 key 是 all_codes.
-  @Cacheable(key = "'all_codes'")
-  public List<Index> fetchIndex() {
-    List<Map> rawData = restTemplate.getForObject(rawDataUrl, List.class);
+  public List fresh() {
+    indexList = fetchIndex();
+    // SpringContextUtil.getBean 重新获取 IndexService
+    // 从已经存在的方法里调用 redis 相关方法，并不能触发 redis 相关操作，所以用这种方式重新获取一次
+    IndexService indexService = SpringContextUtil.getBean(IndexService.class);
+    indexService.remove();
+    return indexService.store();
+  }
+
+  @CacheEvict(allEntries = true)
+  public void remove() {}
+
+  @Cacheable(key = "'all_indexes'")
+  public List<Index> store() {
+    System.out.println(this);
+    return indexList;
+  }
+
+  @Cacheable(key = "'all_indexes'")
+  public List<Index> get() {
+    return CollUtil.toList();
+  }
+
+  public List fetchIndex() {
+    List rawData = restTemplate.getForObject(rawDataUrl, List.class);
     return map2Index(rawData);
   }
 
